@@ -1022,7 +1022,9 @@ export default class Server {
       return this.render404(req, res, parsedUrl)
     }
 
+    console.time("renderToHTML")
     const html = await this.renderToHTML(req, res, pathname, query)
+    console.timeEnd("renderToHTML")
     // Request was ended by the user
     if (html === null) {
       return
@@ -1262,6 +1264,7 @@ export default class Server {
         let renderResult
         // handle serverless
         if (isLikeServerless) {
+          console.time("renderReqToHTML")
           renderResult = await (components.Component as any).renderReqToHTML(
             req,
             res,
@@ -1273,6 +1276,7 @@ export default class Server {
               // defaultLocale,
             }
           )
+          console.timeEnd("renderReqToHTML")
 
           html = renderResult.html
           pageData = renderResult.renderOpts.pageData
@@ -1448,13 +1452,16 @@ export default class Server {
       const result = await this.findPageComponents(pathname, query)
       if (result) {
         try {
-          return await this.renderToHTMLWithComponents(
+          console.time("renderToHTMLWithComponents")
+          const ret = await this.renderToHTMLWithComponents(
             req,
             res,
             pathname,
             result,
             { ...this.renderOpts }
           )
+          console.timeEnd("renderToHTMLWithComponents")
+          return ret
         } catch (err) {
           if (!(err instanceof NoFallbackError)) {
             throw err
@@ -1469,20 +1476,26 @@ export default class Server {
             continue
           }
 
+          console.time("findPageComponents")
           const dynamicRouteResult = await this.findPageComponents(
             dynamicRoute.page,
             query,
             params
           )
+          console.timeEnd("findPageComponents")
+
           if (dynamicRouteResult) {
             try {
-              return await this.renderToHTMLWithComponents(
+              console.time("renderToHTMLWithComponents")
+              const ret = await this.renderToHTMLWithComponents(
                 req,
                 res,
                 dynamicRoute.page,
                 dynamicRouteResult,
                 { ...this.renderOpts, params }
               )
+              console.timeEnd("renderToHTMLWithComponents")
+              return ret
             } catch (err) {
               if (!(err instanceof NoFallbackError)) {
                 throw err
